@@ -1,0 +1,124 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using ThesisRepository.DTOs;
+using ThesisRepository.Services;
+
+namespace ThesisRepository.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ThesesController : ControllerBase
+    {
+        private readonly IThesisService _thesisService;
+
+        public ThesesController(IThesisService thesisService)
+        {
+            _thesisService = thesisService;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<List<ThesisDto>>> GetAllTheses()
+        {
+            try
+            {
+                var theses = await _thesisService.GetAllTheses();
+                return Ok(theses);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ThesisDto>> GetThesisById(string id)
+        {
+            try
+            {
+                var thesis = await _thesisService.GetThesisById(id);
+                if (thesis == null)
+                    return NotFound(new { message = "Thesis not found" });
+
+                return Ok(thesis);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<ThesisDto>> CreateThesis([FromBody] CreateThesisRequest request)
+        {
+            try
+            {
+                var thesis = await _thesisService.CreateThesis(request);
+                return CreatedAtAction(nameof(GetThesisById), new { id = thesis.Id }, thesis);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPatch("{id}")]
+        public async Task<ActionResult<ThesisDto>> UpdateThesis(
+            string id, 
+            [FromBody] UpdateThesisRequest request)
+        {
+            try
+            {
+                var thesis = await _thesisService.UpdateThesis(id, request);
+                return Ok(thesis);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> DeleteThesis(string id)
+        {
+            try
+            {
+                await _thesisService.DeleteThesis(id);
+                return Ok(new { message = "Thesis deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("upload-pdf")]
+        public async Task<ActionResult<string>> UploadPdf([FromBody] UploadPdfRequest request)
+        {
+            try
+            {
+                var fileId = await _thesisService.UploadPdf(request.FileData);
+                return Ok(new { fileId });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("pdf/{fileId}")]
+        public async Task<ActionResult<string>> GetPdfData(string fileId)
+        {
+            try
+            {
+                var data = await _thesisService.GetPdfData(fileId);
+                if (data == null)
+                    return NotFound(new { message = "PDF not found" });
+
+                return Ok(new { data });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+    }
+}

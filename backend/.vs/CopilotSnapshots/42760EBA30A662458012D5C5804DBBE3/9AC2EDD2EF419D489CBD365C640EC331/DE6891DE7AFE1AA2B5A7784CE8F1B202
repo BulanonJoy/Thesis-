@@ -1,0 +1,100 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using ThesisRepository.DTOs;
+using ThesisRepository.Services;
+
+namespace ThesisRepository.Controllers
+{
+    [ApiController]
+    [Route("api/auth")]
+    public class AuthController : ControllerBase
+    {
+        private readonly IAuthService _authService;
+
+        public AuthController(IAuthService authService)
+        {
+            _authService = authService;
+        }
+
+        [HttpPost("signin")]
+        public async Task<ActionResult<AuthResponse>> SignIn([FromBody] LoginRequest request)
+        {
+            try
+            {
+                var response = await _authService.SignIn(request);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("signup")]
+        public async Task<ActionResult<AuthResponse>> SignUp([FromBody] SignUpRequest request)
+        {
+            try
+            {
+                var response = await _authService.SignUp(request);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("signout")]
+        public ActionResult SignOut()
+        {
+            // JWT tokens are stateless, so signout is handled client-side
+            return Ok(new { message = "Signed out successfully" });
+        }
+
+        [HttpPost("check-reset-status")]
+        public async Task<ActionResult<PasswordResetStatusResponse>> CheckResetStatus([FromBody] CheckResetStatusRequest request)
+        {
+            try
+            {
+                var status = await _authService.CheckPasswordResetStatus(request.Email);
+                return Ok(status);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            try
+            {
+                await _authService.ResetPassword(request.RequestId, request.Email, request.NewPassword);
+                return Ok(new { message = "Password reset successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+    }
+
+    public class CheckResetStatusRequest
+    {
+        public string Email { get; set; } = string.Empty;
+    }
+
+    public class ResetPasswordRequest
+    {
+        public string RequestId { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
+    }
+
+    public class PasswordResetStatusResponse
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+    }
+}
