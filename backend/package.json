@@ -1,0 +1,9 @@
+{
+  "name": "thesis-backend-static",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo \"No frontend to build\"",
+    "start": "node server.js"
+  }
+}
