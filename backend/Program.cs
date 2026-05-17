@@ -7,6 +7,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,7 +32,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 "http://localhost:5173",
                 "http://localhost:5174",
-                "http://localhost:3000")
+                "http://localhost:3000",
+                "https://thesis-73pt.vercel.app")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -87,11 +90,24 @@ if (app.Environment.IsDevelopment())
 var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
 Directory.CreateDirectory(uploadsPath);
 
+// Serve uploaded files from /uploads when deployed (e.g. Render)
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
+
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<AdminSessionTimeoutMiddleware>();
 app.MapControllers();
+
+// Trust proxy headers (X-Forwarded-For / X-Forwarded-Proto) when deployed behind a reverse proxy
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 // ── Database initialisation ───────────────────────────────────────────────────
 using (var scope = app.Services.CreateScope())
@@ -115,6 +131,15 @@ using (var scope = app.Services.CreateScope())
     {
         logger.LogError(ex, "An error occurred while initialising the database.");
     }
+}
+
+// If running on Render (or other PaaS) bind to the PORT environment variable
+var portEnv = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(portEnv))
+{
+    // Clear any existing URLs and bind to the port from the environment
+    app.Urls.Clear();
+    app.Urls.Add($"http://0.0.0.0:{portEnv}");
 }
 
 app.Run();

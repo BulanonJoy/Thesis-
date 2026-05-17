@@ -203,6 +203,24 @@ For production deployment:
    dotnet publish -c Release -o ./publish
    ```
 
+### Deploying to Render
+
+1. Create a new Web Service on Render and connect it to this GitHub repository.
+2. Set the build command to:
+   ```bash
+   dotnet publish -c Release -o publish
+   ```
+3. Set the start command to:
+   ```bash
+   dotnet ./publish/ThesisRepository.dll
+   ```
+4. Add required environment variables in the Render dashboard:
+   - ConnectionStrings__DefaultConnection: your production SQL Server connection string
+   - JwtSettings__Secret: a secure random JWT signing key
+5. Render provides a PORT environment variable automatically; the app will bind to it.
+
+Note: The uploads/ directory is ignored by .gitignore. For persistent file storage consider using an external object store (S3, DigitalOcean Spaces, etc.) or Render Volumes.
+
 ## License
 
 Copyright © 2024 Thesis Repository System. All rights reserved.
