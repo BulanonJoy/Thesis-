@@ -9,9 +9,9 @@
 
   "scripts": {
     "dev": "vite",
-    "build": "npx vite build",
+    "build": "vite build",
     "preview": "vite preview",
-    "vercel-build": "npx vite build"
+    "vercel-build": "npm run build"
   },
 
   "dependencies": {
