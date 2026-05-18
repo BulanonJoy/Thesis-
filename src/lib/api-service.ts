@@ -82,7 +82,7 @@ export function getStoredUserId(): string | null {
 // ── HTTP helper ───────────────────────────────────────────────────────────────
 async function apiRequest<T>(
   endpoint: string,
-  options: AxiosRequestConfig = {}
+  options: (AxiosRequestConfig & { body?: string }) = {}
 ): Promise<T> {
   const token = getAuthToken();
   const headers = {
@@ -91,11 +91,20 @@ async function apiRequest<T>(
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
+  // Convert fetch-style 'body' to axios-style 'data'
+  const axiosOptions: AxiosRequestConfig = {
+    ...options,
+    headers,
+  };
+  if ('body' in options && options.body) {
+    axiosOptions.data = options.body;
+    delete axiosOptions.body;
+  }
+
   try {
     const response = await api.request<T>({
       url: endpoint,
-      ...options,
-      headers,
+      ...axiosOptions,
     });
 
     if (response.status === 204) {
@@ -397,7 +406,9 @@ export async function apiDeletePasswordResetRequest(id: string): Promise<void> {
 export async function apiCheckPasswordResetStatus(
   email: string
 ): Promise<{ id: string; email: string; status: string }> {
-  return apiRequest<{ id: string; email: string; status: string }>(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+  return apiRequest<{ id: string; email: string; status: string }>(`/auth/verify-email?email=${encodeURIComponent(email)}`, {
+    method: 'GET',
+  });
 }
 
 export async function apiResetPassword(
