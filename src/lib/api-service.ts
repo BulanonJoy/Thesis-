@@ -1,18 +1,5 @@
-// API Service – connects to the C# ASP.NET Core 8 backend
-// Backend: http://localhost:5000
-// Database: CPE\SQLEXPRESS / ThesisRepositoryDB
-
-function resolveApiBaseUrl(): string {
-  const configured = import.meta.env.VITE_API_URL?.trim();
-  if (configured) {
-    return configured.replace(/\/+$/, '');
-  }
-
-  // Use Vite dev proxy when VITE_API_URL is not provided.
-  return '/api';
-}
-
-const API_BASE_URL = resolveApiBaseUrl();
+import api from '@/api/api.js';
+import type { AxiosRequestConfig } from 'axios';
 
 // ── Token management ──────────────────────────────────────────────────────────
 const AUTH_TOKEN_KEY = 'authToken';
@@ -95,45 +82,42 @@ export function getStoredUserId(): string | null {
 // ── HTTP helper ───────────────────────────────────────────────────────────────
 async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: AxiosRequestConfig = {}
 ): Promise<T> {
   const token = getAuthToken();
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+  const headers = {
+    "Content-Type": "application/json",
     ...options.headers,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  if (token) {
-    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
-  }
+  try {
+    const response = await api.request<T>({
+      url: endpoint,
+      ...options,
+      headers,
+    });
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  if (response.status === 401 && !endpoint.startsWith('/auth/')) {
-    apiSignOut();
-    if (window.location.pathname.startsWith('/dashboard')) {
-      window.location.replace('/login');
+    if (response.status === 204) {
+      return undefined as T;
     }
-  }
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'An error occurred' }));
-    throw new Error(error.message || 'Request failed');
-  }
+    return response.data as T;
+  } catch (error) {
+    const axiosError = error as { response?: { status?: number; data?: any } };
+    const status = axiosError.response?.status;
+    const data = axiosError.response?.data;
 
-  if (response.status === 204) {
-    return undefined as T;
-  }
+    if (status === 401 && !endpoint.startsWith('/auth/')) {
+      apiSignOut();
+      if (window.location.pathname.startsWith('/dashboard')) {
+        window.location.replace('/login');
+      }
+    }
 
-  const raw = await response.text();
-  if (!raw) {
-    return undefined as T;
+    const message = data?.message || data?.error || 'Request failed';
+    throw new Error(message);
   }
-
-  return JSON.parse(raw) as T;
 }
 
 // ── Types matching the C# DTOs ────────────────────────────────────────────────

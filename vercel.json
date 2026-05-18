@@ -9,6 +9,9 @@
       }
     }
   ],
+  "env": {
+    "VITE_API_URL": "https://thesis-backend-mjeh.onrender.com"
+  },
   "routes": [
     { "handle": "filesystem" },
     { "src": "^/(.*)$", "dest": "/index.html" }
