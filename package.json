@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "name": "@figma/my-make-file",
   "private": true,
   "version": "0.0.1",
@@ -79,15 +78,5 @@
     "tw-animate-css": "1.3.8",
     "vaul": "1.1.2",
     "vite": "6.4.2"
-=======
-  "name": "thesis-backend",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "start": "sh -c \"echo 'This repository is a Docker-based .NET app. Configure the Render service to use the Dockerfile (env: docker) or deploy the published DLL.' && exit 0\""
-  },
-  "engines": {
-    "node": ">=18"
->>>>>>> 7f1aece5db3daa81cf858382dc89886443b797e3
   }
 }

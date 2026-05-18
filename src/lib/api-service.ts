@@ -101,6 +101,14 @@ async function apiRequest<T>(
     delete axiosOptions.body;
   }
 
+  // Ensure HTTP method is correct and normalized for axios
+  if (!axiosOptions.method) {
+    axiosOptions.method = axiosOptions.data ? 'post' : 'get';
+  }
+  if (typeof axiosOptions.method === 'string') {
+    axiosOptions.method = axiosOptions.method.toLowerCase() as any;
+  }
+
   try {
     const response = await api.request<T>({
       url: endpoint,
