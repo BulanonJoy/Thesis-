@@ -223,6 +223,7 @@ export async function createThesis(
     mainAuthorEmail: thesis.mainAuthorEmail ?? '',
     coAuthorEmail:   thesis.coAuthorEmail ?? null,
     researchType:    thesis.research_type ?? null,
+    doi:             (thesis as any).doi ?? null,
   });
   return convertThesisFromApi(apiThesis);
 }

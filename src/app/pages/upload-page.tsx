@@ -54,7 +54,7 @@ const RESEARCH_TYPES = [
 
 const EMPTY_FORM = {
   title: "", mainAuthorName: "", coAuthorName: "", mainAuthorEmail: "", coAuthorEmail: "", advisors: "", department: "",
-  fieldOfResearch: "", year: "", abstract: "", keywords: "", researchType: "",
+  fieldOfResearch: "", year: "", abstract: "", keywords: "", researchType: "", doi: "",
 };
 
 const REQUIRED_FORM_FIELDS: Array<{ key: keyof typeof EMPTY_FORM; label: string }> = [
@@ -233,6 +233,7 @@ export function UploadPage() {
         coAuthorName:     formData.coAuthorName.trim(),
         mainAuthorEmail:  formData.mainAuthorEmail.trim(),
         coAuthorEmail:    formData.coAuthorEmail.trim(),
+        doi:              formData.doi?.trim() || null,
         research_type:    formData.researchType.trim(),
         approved_by:      null,
         approved_at:      null,
@@ -421,6 +422,18 @@ export function UploadPage() {
                       <span>{fieldErrors.advisors}</span>
                     </div>
                   )}
+                </div>
+
+                {/* DOI (optional) */}
+                <div className="space-y-2">
+                  <Label htmlFor="doi">DOI (optional)</Label>
+                  <Input
+                    id="doi"
+                    value={(formData as any).doi}
+                    onChange={e => set("doi" as keyof typeof EMPTY_FORM, e.target.value)}
+                    placeholder="e.g., 10.1234/abcd.2025"
+                    className="border-[#2D5016]/20"
+                  />
                 </div>
 
                 {/* Department & Year */}

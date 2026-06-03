@@ -323,6 +323,7 @@ export async function apiCreateThesis(thesis: {
   mainAuthorEmail: string;
   coAuthorEmail?: string | null;
   researchType?: string | null;
+  doi?: string | null;
 }): Promise<Thesis> {
   return apiRequest<Thesis>('/thesis', {
     method: 'POST',
