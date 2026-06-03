@@ -50,6 +50,7 @@ const FIELDS_OF_RESEARCH = [
 const RESEARCH_TYPES = [
   "White Paper",
   "Published Research",
+  "Unpublished Paper",
 ];
 
 const EMPTY_FORM = {
