@@ -100,6 +100,7 @@ namespace ThesisRepository.Services
                 UploadedAt      = DateTime.UtcNow,
                 MainAuthorEmail = request.MainAuthorEmail,
                 CoAuthorEmail   = request.CoAuthorEmail,
+                Doi             = request.Doi,
                 ResearchType    = request.ResearchType
             };
 
@@ -147,6 +148,9 @@ namespace ThesisRepository.Services
             if (request.CoAuthorEmail != null)
                 thesis.CoAuthorEmail = request.CoAuthorEmail;
 
+            if (!string.IsNullOrEmpty(request.Doi))
+                thesis.Doi = request.Doi;
+
             if (!string.IsNullOrEmpty(request.ResearchType))
                 thesis.ResearchType = request.ResearchType;
 
@@ -160,6 +164,8 @@ namespace ThesisRepository.Services
                 {
                     thesis.ApprovedAt = DateTime.UtcNow;
                     thesis.ApaCitation = GenerateApaCitation(thesis);
+                    thesis.IeeeCitation = GenerateIeeeCitation(thesis);
+                    thesis.AcsCitation = GenerateAcsCitation(thesis);
                 }
                 
                 // Track when it was rejected
@@ -257,6 +263,30 @@ namespace ThesisRepository.Services
             return $"{formattedAuthors}. ({year}). {title}.";
         }
 
+        private static string GenerateIeeeCitation(Thesis thesis)
+        {
+            // IEEE Format: A. B. Author1 and C. D. Author2, "Title," Department, Year.
+            var authorsRaw = thesis.Authors ?? "Unknown Author";
+            var year = thesis.Year > 0 ? thesis.Year.ToString() : DateTime.UtcNow.Year.ToString();
+            var title = thesis.Title ?? "Untitled";
+            var department = thesis.Department ?? "Unknown Department";
+
+            var formattedAuthors = FormatIeeeAuthors(authorsRaw);
+            return $"{formattedAuthors}, \"{title},\" {department}, {year}.";
+        }
+
+        private static string GenerateAcsCitation(Thesis thesis)
+        {
+            // ACS Format: LastName, F.; LastName, F. Title. Department. Year.
+            var authorsRaw = thesis.Authors ?? "Unknown Author";
+            var year = thesis.Year > 0 ? thesis.Year.ToString() : DateTime.UtcNow.Year.ToString();
+            var title = thesis.Title ?? "Untitled";
+            var department = thesis.Department ?? "Unknown Department";
+
+            var formattedAuthors = FormatAcsAuthors(authorsRaw);
+            return $"{formattedAuthors} {title}. {department}. {year}.";
+        }
+
         private static string FormatApaAuthors(string authorsRaw)
         {
             var authors = authorsRaw
@@ -297,6 +327,70 @@ namespace ThesisRepository.Services
             return $"{lastName}, {string.Join(" ", initials)}";
         }
 
+        private static string FormatIeeeAuthors(string authorsRaw)
+        {
+            var authors = authorsRaw
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(a => a.Trim())
+                .Where(a => !string.IsNullOrWhiteSpace(a))
+                .ToList();
+
+            if (authors.Count == 0)
+                return "Unknown Author";
+
+            var formatted = authors.Select(author =>
+            {
+                var parts = author.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0)
+                    return "Unknown Author";
+
+                var lastName = parts[^1];
+                var initials = parts
+                    .Take(parts.Length - 1)
+                    .Select(p => char.ToUpperInvariant(p[0]) + ".")
+                    .ToArray();
+
+                return initials.Length > 0 ? $"{string.Join(" ", initials)} {lastName}" : lastName;
+            }).ToList();
+
+            if (formatted.Count == 1)
+                return formatted[0];
+
+            if (formatted.Count == 2)
+                return $"{formatted[0]} and {formatted[1]}";
+
+            return $"{string.Join(", ", formatted.Take(formatted.Count - 1))}, and {formatted.Last()}";
+        }
+
+        private static string FormatAcsAuthors(string authorsRaw)
+        {
+            var authors = authorsRaw
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(a => a.Trim())
+                .Where(a => !string.IsNullOrWhiteSpace(a))
+                .ToList();
+
+            if (authors.Count == 0)
+                return "Unknown Author";
+
+            var formatted = authors.Select(author =>
+            {
+                var parts = author.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0)
+                    return "Unknown Author";
+
+                var lastName = parts[^1];
+                var initials = parts
+                    .Take(parts.Length - 1)
+                    .Select(p => char.ToUpperInvariant(p[0]) + ".")
+                    .ToArray();
+
+                return initials.Length > 0 ? $"{lastName}, {string.Join("", initials).Replace(".", ". ").Trim()}" : lastName;
+            }).ToList();
+
+            return string.Join("; ", formatted);
+        }
+
         private static ThesisDto MapToDto(Thesis t)
         {
             string[] keywords;
@@ -335,6 +429,9 @@ namespace ThesisRepository.Services
                 ViewCount       = t.ViewCount,
                 DownloadCount   = t.DownloadCount,
                 ApaCitation     = t.ApaCitation,
+                IeeeCitation    = t.IeeeCitation,
+                AcsCitation     = t.AcsCitation,
+                Doi             = t.Doi,
                 MainAuthorEmail = t.MainAuthorEmail,
                 CoAuthorEmail   = t.CoAuthorEmail,
                 ResearchType    = t.ResearchType

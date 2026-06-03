@@ -53,6 +53,9 @@ namespace ThesisRepository.DTOs
         /// <summary>Co-author email address (optional).</summary>
         public string? CoAuthorEmail { get; set; }
 
+        /// <summary>Digital Object Identifier (DOI) for the thesis.</summary>
+        public string? Doi { get; set; }
+
         /// <summary>Research type (White Paper or Published Research).</summary>
         public string? ResearchType { get; set; }
     }
@@ -86,6 +89,9 @@ namespace ThesisRepository.DTOs
         public string? MainAuthorEmail { get; set; }
 
         public string? CoAuthorEmail { get; set; }
+
+        /// <summary>Digital Object Identifier (DOI) for the thesis.</summary>
+        public string? Doi { get; set; }
 
         public string? ResearchType { get; set; }
     }
@@ -153,6 +159,15 @@ namespace ThesisRepository.DTOs
 
         /// <summary>Auto-generated APA citation format.</summary>
         public string? ApaCitation { get; set; }
+
+        /// <summary>Auto-generated IEEE citation format.</summary>
+        public string? IeeeCitation { get; set; }
+
+        /// <summary>Auto-generated ACS citation format.</summary>
+        public string? AcsCitation { get; set; }
+
+        /// <summary>Digital Object Identifier (DOI) for the thesis.</summary>
+        public string? Doi { get; set; }
 
         /// <summary>Main author email address.</summary>
         public string? MainAuthorEmail { get; set; }
