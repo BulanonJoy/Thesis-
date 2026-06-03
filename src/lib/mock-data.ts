@@ -41,6 +41,9 @@ export interface Thesis {
   view_count: number;
   download_count: number;
   apaCitation?: string | null;
+  ieeeCitation?: string | null;
+  acsCitation?: string | null;
+  doi?: string | null;
   mainAuthorEmail?: string | null;
   coAuthorEmail?: string | null;
   research_type?: string | null;
@@ -103,6 +106,9 @@ function convertThesisFromApi(t: api.Thesis): Thesis {
     view_count:       t.viewCount,
     download_count:   t.downloadCount,
     apaCitation:      t.apaCitation ?? null,
+    ieeeCitation:     (t as any).ieeeCitation ?? null,
+    acsCitation:      (t as any).acsCitation ?? null,
+    doi:              (t as any).doi ?? null,
     mainAuthorEmail:  t.mainAuthorEmail ?? null,
     coAuthorEmail:    t.coAuthorEmail ?? null,
     research_type:    t.researchType ?? null,

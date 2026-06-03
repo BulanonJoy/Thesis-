@@ -43,6 +43,9 @@ interface Thesis {
   mainAuthorEmail?: string | null;
   coAuthorEmail?: string | null;
   apaCitation?: string | null;
+  ieeeCitation?: string | null;
+  acsCitation?: string | null;
+  doi?: string | null;
   research_type?: string | null;
 }
 
@@ -120,6 +123,9 @@ export function ThesisViewerPage() {
             mainAuthorEmail: data.mainAuthorEmail ?? null,
             coAuthorEmail: data.coAuthorEmail ?? null,
             apaCitation: data.apaCitation ?? null,
+            ieeeCitation: data.ieeeCitation ?? null,
+            acsCitation: data.acsCitation ?? null,
+            doi: data.doi ?? null,
             research_type: data.research_type ?? null,
           };
           setThesis(mapped);
@@ -186,6 +192,39 @@ export function ThesisViewerPage() {
     }
   };
   const apaCitation = thesis?.apaCitation?.trim() ?? "";
+
+  const handleCopyIeeeCitation = async () => {
+    const citation = thesis?.ieeeCitation?.trim();
+    if (!citation) return;
+    try {
+      await navigator.clipboard.writeText(citation);
+      toast.success("Citation copied");
+    } catch {
+      toast.error("Could not copy citation");
+    }
+  };
+
+  const handleCopyAcsCitation = async () => {
+    const citation = thesis?.acsCitation?.trim();
+    if (!citation) return;
+    try {
+      await navigator.clipboard.writeText(citation);
+      toast.success("Citation copied");
+    } catch {
+      toast.error("Could not copy citation");
+    }
+  };
+
+  const handleCopyDoi = async () => {
+    const doi = thesis?.doi?.trim();
+    if (!doi) return;
+    try {
+      await navigator.clipboard.writeText(doi);
+      toast.success("DOI copied");
+    } catch {
+      toast.error("Could not copy DOI");
+    }
+  };
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -362,23 +401,63 @@ export function ThesisViewerPage() {
               </p>
             </div>
 
-            {thesis.status === "approved" && apaCitation && (
-              <div className="space-y-2 rounded-md border border-[#D4AF37]/40 bg-[#F4E5C2]/20 p-3">
+            {thesis.status === "approved" && (
+              <div className="space-y-3 rounded-md border border-[#D4AF37]/40 bg-[#F4E5C2]/20 p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-xs text-gray-500 uppercase tracking-wide">APA Citation</h3>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="outline"
-                    onClick={handleCopyCitation}
-                    aria-label="Copy citation"
-                    title="Copy citation"
-                    className="h-8 w-8 border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                  <h3 className="text-xs text-gray-500 uppercase tracking-wide">Citations</h3>
                 </div>
-                <p className="text-sm text-gray-700">{apaCitation}</p>
+
+                {apaCitation && (
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h4 className="text-xs text-gray-500">APA</h4>
+                      <p className="text-sm text-gray-700">{apaCitation}</p>
+                    </div>
+                    <Button type="button" size="icon" variant="outline" onClick={handleCopyCitation} className="h-8 w-8">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                {thesis.ieeeCitation && (
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h4 className="text-xs text-gray-500">IEEE</h4>
+                      <p className="text-sm text-gray-700">{thesis.ieeeCitation}</p>
+                    </div>
+                    <Button type="button" size="icon" variant="outline" onClick={handleCopyIeeeCitation} className="h-8 w-8">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                {thesis.acsCitation && (
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h4 className="text-xs text-gray-500">ACS</h4>
+                      <p className="text-sm text-gray-700">{thesis.acsCitation}</p>
+                    </div>
+                    <Button type="button" size="icon" variant="outline" onClick={handleCopyAcsCitation} className="h-8 w-8">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                {thesis.doi && (
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h4 className="text-xs text-gray-500">DOI</h4>
+                      <p className="text-sm text-gray-700">
+                        <a href={`https://doi.org/${thesis.doi}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                          https://doi.org/{thesis.doi}
+                        </a>
+                      </p>
+                    </div>
+                    <Button type="button" size="icon" variant="outline" onClick={handleCopyDoi} className="h-8 w-8">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
