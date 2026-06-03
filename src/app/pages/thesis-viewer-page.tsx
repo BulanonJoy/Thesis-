@@ -384,6 +384,23 @@ export function ThesisViewerPage() {
                 </div>
               )}
 
+              {thesis.doi && (
+                <div className="flex items-start gap-2">
+                  <Tag className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">DOI</p>
+                    <div className="flex items-center gap-2">
+                      <a href={`https://doi.org/${thesis.doi}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                        {thesis.doi}
+                      </a>
+                      <Button type="button" size="icon" variant="outline" onClick={handleCopyDoi} className="h-6 w-6">
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-start gap-2">
                 <FileText className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
                 <div>
