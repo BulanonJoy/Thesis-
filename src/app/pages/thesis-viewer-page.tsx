@@ -459,22 +459,6 @@ export function ThesisViewerPage() {
                     </Button>
                   </div>
                 )}
-
-                {thesis.doi && (
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h4 className="text-xs text-gray-500">DOI</h4>
-                      <p className="text-sm text-gray-700">
-                        <a href={`https://doi.org/${thesis.doi}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-                          https://doi.org/{thesis.doi}
-                        </a>
-                      </p>
-                    </div>
-                    <Button type="button" size="icon" variant="outline" onClick={handleCopyDoi} className="h-8 w-8">
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
               </div>
             )}
 
