@@ -292,9 +292,7 @@ export function UploadPage() {
       });
 
       setFormData(EMPTY_FORM);
-      if (formDraftStorageKey) {
-        localStorage.removeItem(formDraftStorageKey);
-      }
+      // Keep the uploaded PDF selection persistent in localStorage and UI.
       setPdfFile(null);
       setActiveTab("history");
       fetchMyTheses();
@@ -655,13 +653,17 @@ export function UploadPage() {
                             <FileText className="w-8 h-8 text-[#2D5016]" />
                             <div className="text-left">
                               <p className="text-sm font-medium text-[#2D5016]">
-                                {pdfFile?.name || pdfFileName}
+                                {pdfFile?.name || pdfFileName || pdfFileId}
                               </p>
                               {pdfFile ? (
                                 <p className="text-xs text-gray-600">
                                   {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
                                 </p>
-                              ) : null}
+                              ) : (
+                                <p className="text-xs text-gray-600">
+                                  This PDF has already been uploaded and will remain available.
+                                </p>
+                              )}
                             </div>
                           </div>
                           <Button
