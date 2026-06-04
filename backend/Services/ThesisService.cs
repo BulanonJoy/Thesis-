@@ -24,7 +24,9 @@ namespace ThesisRepository.Services
                 .OrderByDescending(t => t.UploadedAt)
                 .ToListAsync();
 
-            return theses.Where(IsPdfAvailable).Select(MapToDto).ToList();
+            // Return all theses regardless of PDF availability
+            // PDF missing will be handled at download endpoint
+            return theses.Select(MapToDto).ToList();
         }
 
         public async Task<ThesisDto?> GetThesisById(string id)
@@ -35,7 +37,7 @@ namespace ThesisRepository.Services
             var thesis = await _context.Theses
                 .FirstOrDefaultAsync(t => t.ThesisId == intId && !t.IsDeleted);
                 
-            if (thesis == null || !IsPdfAvailable(thesis))
+            if (thesis == null)
                 return null;
 
             return MapToDto(thesis);
@@ -74,7 +76,9 @@ namespace ThesisRepository.Services
                 .OrderByDescending(t => t.UploadedAt)
                 .ToListAsync();
 
-            return theses.Where(IsPdfAvailable).Select(MapToDto).ToList();
+            // Return all matching theses regardless of PDF availability
+            // PDF missing will be handled at download endpoint
+            return theses.Select(MapToDto).ToList();
         }
 
         // ── Write ────────────────────────────────────────────────────────────────
