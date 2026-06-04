@@ -22,6 +22,11 @@ import { getAllTheses, createThesis, uploadPDF } from "../../lib/mock-data";
 
 const UPLOAD_FORM_DRAFT_KEY = "thesisUploadDraft";
 
+interface UploadFormDraft extends typeof EMPTY_FORM {
+  pdfFileId?: string;
+  pdfFileName?: string;
+}
+
 interface UploadedThesis {
   id: string;
   title: string;
@@ -73,13 +78,19 @@ const REQUIRED_FORM_FIELDS: Array<{ key: keyof typeof EMPTY_FORM; label: string 
 type RequiredFieldKey = keyof typeof EMPTY_FORM | "pdfFile";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function isUploadFormDraft(value: unknown): value is typeof EMPTY_FORM {
+function isUploadFormDraft(value: unknown): value is UploadFormDraft {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
 
-  return Object.keys(EMPTY_FORM).every(
+  const hasFormFields = Object.keys(EMPTY_FORM).every(
     (key) => typeof candidate[key] === "string"
   );
+  if (!hasFormFields) return false;
+
+  if (candidate.pdfFileId != null && typeof candidate.pdfFileId !== "string") return false;
+  if (candidate.pdfFileName != null && typeof candidate.pdfFileName !== "string") return false;
+
+  return true;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -103,6 +114,10 @@ export function UploadPage() {
 
   // PDF state
   const [pdfFile, setPdfFile]       = useState<File | null>(null);
+  const [pdfFileId, setPdfFileId]   = useState<string | null>(null);
+  const [pdfFileName, setPdfFileName] = useState<string | null>(null);
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const [pdfUploadError, setPdfUploadError] = useState("");
   const [dragOver, setDragOver]     = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -116,6 +131,8 @@ export function UploadPage() {
       const parsed = JSON.parse(stored);
       if (isUploadFormDraft(parsed)) {
         setFormData(parsed);
+        setPdfFileId(parsed.pdfFileId ?? null);
+        setPdfFileName(parsed.pdfFileName ?? null);
       } else {
         localStorage.removeItem(formDraftStorageKey);
       }
@@ -126,8 +143,15 @@ export function UploadPage() {
 
   useEffect(() => {
     if (!formDraftStorageKey) return;
-    localStorage.setItem(formDraftStorageKey, JSON.stringify(formData));
-  }, [formData, formDraftStorageKey]);
+
+    const draft: UploadFormDraft = {
+      ...formData,
+      pdfFileId: pdfFileId ?? undefined,
+      pdfFileName: pdfFileName ?? undefined,
+    };
+
+    localStorage.setItem(formDraftStorageKey, JSON.stringify(draft));
+  }, [formData, pdfFileId, pdfFileName, formDraftStorageKey]);
 
   // ── Fetch my uploads ──────────────────────────────────────────────────────
   const fetchMyTheses = useCallback(async () => {
@@ -155,7 +179,7 @@ export function UploadPage() {
   useEffect(() => { fetchMyTheses(); }, [fetchMyTheses]);
 
   // ── PDF helpers ───────────────────────────────────────────────────────────
-  const handlePdfFile = (file: File) => {
+  const handlePdfFile = async (file: File) => {
     if (file.type !== "application/pdf") {
       toast.error("Invalid File", { description: "Only PDF files are accepted." });
       return;
@@ -164,8 +188,26 @@ export function UploadPage() {
       toast.error("File Too Large", { description: "PDF must be under 50 MB." });
       return;
     }
-    setPdfFile(file);
+
+    setPdfUploadError("");
+    setPdfUploading(true);
     setFieldErrors((prev) => ({ ...prev, pdfFile: undefined }));
+
+    try {
+      const fileId = await uploadPDF(file);
+      setPdfFile(file);
+      setPdfFileId(fileId);
+      setPdfFileName(file.name);
+      toast.success("PDF saved", {
+        description: "The PDF has been uploaded and will remain available.",
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to save PDF.";
+      setPdfUploadError(msg);
+      toast.error("Upload Failed", { description: msg });
+    } finally {
+      setPdfUploading(false);
+    }
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,8 +233,8 @@ export function UploadPage() {
         nextErrors[key] = "Please fill out this field.";
       }
     });
-    if (!pdfFile) {
-      nextErrors.pdfFile = "Please fill out this field.";
+    if (!pdfFileId) {
+      nextErrors.pdfFile = "Please select a PDF file to upload.";
     }
     if (formData.mainAuthorEmail.trim() && !EMAIL_REGEX.test(formData.mainAuthorEmail.trim())) {
       nextErrors.mainAuthorEmail = "Please enter a valid email address.";
@@ -209,7 +251,11 @@ export function UploadPage() {
     setFieldErrors({});
     setSubmitting(true);
     try {
-      const pdfUrl = await uploadPDF(pdfFile);
+      let fileId = pdfFileId;
+      if (!fileId && pdfFile) {
+        fileId = await uploadPDF(pdfFile);
+        setPdfFileId(fileId);
+      }
 
       const keywordsArray = formData.keywords
         .split(",")
@@ -227,7 +273,7 @@ export function UploadPage() {
         department:       formData.department,
         field_of_research: formData.fieldOfResearch || formData.department,
         year:             parseInt(formData.year),
-        pdf_url:          pdfUrl,
+        pdf_url:          fileId,
         status:           "pending",
         uploaded_by:      user.id,
         mainAuthorName:   formData.mainAuthorName.trim(),
@@ -583,7 +629,7 @@ export function UploadPage() {
                       className="hidden"
                     />
 
-                    {!pdfFile ? (
+                    {!pdfFile && !pdfFileName ? (
                       <div className="space-y-3">
                         <FileUp className="w-12 h-12 text-[#4A7C2D] mx-auto" />
                         <div>
@@ -603,25 +649,47 @@ export function UploadPage() {
                         </Button>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between bg-[#E8F5E1] rounded-lg p-4">
-                        <div className="flex items-center gap-3">
-                          <FileText className="w-8 h-8 text-[#2D5016]" />
-                          <div className="text-left">
-                            <p className="text-sm font-medium text-[#2D5016]">{pdfFile.name}</p>
-                            <p className="text-xs text-gray-600">
-                              {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
-                            </p>
+                      <div className="flex flex-col gap-2 bg-[#E8F5E1] rounded-lg p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <FileText className="w-8 h-8 text-[#2D5016]" />
+                            <div className="text-left">
+                              <p className="text-sm font-medium text-[#2D5016]">
+                                {pdfFile?.name || pdfFileName}
+                              </p>
+                              {pdfFile ? (
+                                <p className="text-xs text-gray-600">
+                                  {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                              ) : null}
+                            </div>
                           </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setPdfFile(null);
+                              setPdfFileId(null);
+                              setPdfFileName(null);
+                              setPdfUploadError("");
+                            }}
+                            className="hover:bg-red-50 hover:text-red-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
                         </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setPdfFile(null)}
-                          className="hover:bg-red-50 hover:text-red-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                        {pdfUploading && (
+                          <p className="text-xs text-gray-600">Uploading PDF to the server...</p>
+                        )}
+                        {!pdfUploading && pdfFileId && (
+                          <p className="text-xs text-gray-600 text-[#2D5016]">
+                            PDF saved permanently on the server.
+                          </p>
+                        )}
+                        {pdfUploadError && (
+                          <p className="text-xs text-amber-700">{pdfUploadError}</p>
+                        )}
                       </div>
                     )}
                   </div>
