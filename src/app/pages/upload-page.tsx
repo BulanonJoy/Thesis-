@@ -61,9 +61,7 @@ const EMPTY_FORM = {
 const REQUIRED_FORM_FIELDS: Array<{ key: keyof typeof EMPTY_FORM; label: string }> = [
   { key: "title", label: "Thesis Title" },
   { key: "mainAuthorName", label: "Main Author Name" },
-  { key: "coAuthorName", label: "Co-Author Name" },
   { key: "mainAuthorEmail", label: "Main Author Email" },
-  { key: "coAuthorEmail", label: "Co-Author Email" },
   { key: "advisors", label: "Thesis Adviser(s)" },
   { key: "department", label: "Department" },
   { key: "year", label: "Year" },
@@ -222,7 +220,9 @@ export function UploadPage() {
         title:            formData.title,
         abstract:         formData.abstract,
         keywords:         keywordsArray,
-        authors:          `${formData.mainAuthorName.trim()}, ${formData.coAuthorName.trim()}`,
+        authors:          formData.coAuthorName.trim()
+          ? `${formData.mainAuthorName.trim()}, ${formData.coAuthorName.trim()}`
+          : formData.mainAuthorName.trim(),
         advisors:         formData.advisors.trim(),
         department:       formData.department,
         field_of_research: formData.fieldOfResearch || formData.department,
@@ -233,7 +233,7 @@ export function UploadPage() {
         mainAuthorName:   formData.mainAuthorName.trim(),
         coAuthorName:     formData.coAuthorName.trim(),
         mainAuthorEmail:  formData.mainAuthorEmail.trim(),
-        coAuthorEmail:    formData.coAuthorEmail.trim(),
+        coAuthorEmail:    formData.coAuthorEmail.trim() || null,
         doi:              formData.doi?.trim() || null,
         research_type:    formData.researchType.trim(),
         approved_by:      null,
@@ -350,13 +350,12 @@ export function UploadPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="coAuthorName">Co-Author Name <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="coAuthorName">Co-Author Name</Label>
                     <Input
                       id="coAuthorName"
                       value={formData.coAuthorName}
                       onChange={e => set("coAuthorName", e.target.value)}
                       placeholder="e.g., Maria Santos"
-                      required
                       className={fieldErrors.coAuthorName ? "border-red-500 focus-visible:ring-red-500/40" : "border-[#2D5016]/20"}
                     />
                     {fieldErrors.coAuthorName && (
@@ -387,14 +386,13 @@ export function UploadPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="coAuthorEmail">Co-Author Email <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="coAuthorEmail">Co-Author Email</Label>
                     <Input
                       id="coAuthorEmail"
                       type="email"
                       value={formData.coAuthorEmail}
                       onChange={e => set("coAuthorEmail", e.target.value)}
                       placeholder="co.author@university.edu"
-                      required
                       className={fieldErrors.coAuthorEmail ? "border-red-500 focus-visible:ring-red-500/40" : "border-[#2D5016]/20"}
                     />
                     {fieldErrors.coAuthorEmail && (
