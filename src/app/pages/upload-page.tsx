@@ -291,9 +291,16 @@ export function UploadPage() {
         description: "Your thesis has been submitted for approval.",
       });
 
+      const draftToSave = {
+        ...EMPTY_FORM,
+        pdfFileId: fileId ?? undefined,
+        pdfFileName: pdfFileName ?? undefined,
+      };
+      if (formDraftStorageKey) {
+        localStorage.setItem(formDraftStorageKey, JSON.stringify(draftToSave));
+      }
+
       setFormData(EMPTY_FORM);
-      // Keep the uploaded PDF selection persistent in localStorage and UI.
-      setPdfFile(null);
       setActiveTab("history");
       fetchMyTheses();
     } catch (err) {
