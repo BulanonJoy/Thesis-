@@ -229,7 +229,10 @@ export function apiSignOut(): void {
   setAuthToken(null);
   localStorage.removeItem(CURRENT_USER_KEY);
   localStorage.removeItem(USER_ID_KEY);
-  clearUploadFormDrafts();
+  // Do NOT clear upload form drafts on sign-out or token expiry.
+  // Uploaded PDF files are stored server-side and the draft's `pdfFileId`
+  // should remain so users can return later and continue their upload.
+  // clearUploadFormDrafts();
 }
 
 export function getCurrentUser(): User | null {
