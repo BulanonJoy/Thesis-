@@ -86,8 +86,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Ensure the uploads directory exists for PDF file storage
-var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+// Ensure the uploads directory exists for PDF file storage (use content root so path is stable)
+var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
 Directory.CreateDirectory(uploadsPath);
 
 // Serve uploaded files from /uploads when deployed (e.g. Render)

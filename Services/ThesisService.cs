@@ -9,10 +9,13 @@ namespace ThesisRepository.Services
     public class ThesisService : IThesisService
     {
         private readonly ApplicationDbContext _context;
+        private readonly string _uploadsDir;
 
-        public ThesisService(ApplicationDbContext context)
+        public ThesisService(ApplicationDbContext context, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env)
         {
             _context = context;
+            _uploadsDir = Path.Combine(env.ContentRootPath, "uploads");
+            Directory.CreateDirectory(_uploadsDir);
         }
 
         // ── Read ─────────────────────────────────────────────────────────────────
@@ -211,12 +214,8 @@ namespace ThesisRepository.Services
 
         public async Task<string> UploadPdf(string fileData)
         {
-            // Create the uploads directory alongside the running executable
-            var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
-            Directory.CreateDirectory(uploadsDir);
-
             var fileName = $"thesis_{DateTime.UtcNow.Ticks}.pdf";
-            var filePath = Path.Combine(uploadsDir, fileName);
+            var filePath = Path.Combine(_uploadsDir, fileName);
 
             // Strip the data-URL prefix when present (e.g. "data:application/pdf;base64,...")
             var base64Data = fileData;
@@ -227,14 +226,14 @@ namespace ThesisRepository.Services
             var bytes = Convert.FromBase64String(base64Data);
             await File.WriteAllBytesAsync(filePath, bytes);
 
-            // Return the relative path stored in the FilePath column
-            return $"uploads/{fileName}";
+            // Return the relative path stored in the FilePath column (relative to content root)
+            return Path.Combine("uploads", fileName).Replace("\\", "/");
         }
 
         public async Task<string?> GetPdfData(string fileId)
         {
             // fileId is the relative path stored in FilePath (e.g. "uploads/thesis_XXXXX.pdf")
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), fileId);
+            var filePath = Path.Combine(_uploadsDir, Path.GetFileName(fileId));
             if (!File.Exists(filePath))
                 return null;
 
