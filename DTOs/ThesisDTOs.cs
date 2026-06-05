@@ -47,10 +47,10 @@ namespace ThesisRepository.DTOs
         [Required]
         public string UploadedBy { get; set; } = string.Empty;  // string of UserId int
 
-        /// <summary>Main author email address.</summary>
+        /// <summary>Main author email address(es). Can be single email or semicolon-separated emails.</summary>
         public string? MainAuthorEmail { get; set; }
 
-        /// <summary>Co-author email address (optional).</summary>
+        /// <summary>Co-author email address(es) (optional). Can be single email or semicolon-separated emails.</summary>
         public string? CoAuthorEmail { get; set; }
 
         /// <summary>Research type (White Paper or Published Research).</summary>
@@ -83,8 +83,10 @@ namespace ThesisRepository.DTOs
         public string? ApprovedBy { get; set; }  // string of UserId int
         public string? RejectionReason { get; set; }
 
+        /// <summary>Main author email address(es). Can be single email or semicolon-separated emails.</summary>
         public string? MainAuthorEmail { get; set; }
 
+        /// <summary>Co-author email address(es) (optional). Can be single email or semicolon-separated emails.</summary>
         public string? CoAuthorEmail { get; set; }
 
         public string? ResearchType { get; set; }

@@ -59,14 +59,14 @@ const RESEARCH_TYPES = [
 ];
 
 const EMPTY_FORM = {
-  title: "", mainAuthorName: "", coAuthorName: "", mainAuthorEmail: "", coAuthorEmail: "", advisors: "", department: "",
+  title: "", mainAuthorName: "", coAuthorName: "", mainAuthorEmails: [], coAuthorEmails: [], advisors: "", department: "",
   fieldOfResearch: "", year: "", abstract: "", keywords: "", researchType: "", doi: "",
 };
 
 const REQUIRED_FORM_FIELDS: Array<{ key: keyof typeof EMPTY_FORM; label: string }> = [
   { key: "title", label: "Thesis Title" },
   { key: "mainAuthorName", label: "Main Author Name" },
-  { key: "mainAuthorEmail", label: "Main Author Email" },
+  { key: "mainAuthorEmails", label: "Main Author Email" },
   { key: "advisors", label: "Thesis Adviser(s)" },
   { key: "department", label: "Department" },
   { key: "year", label: "Year" },
@@ -82,10 +82,18 @@ function isUploadFormDraft(value: unknown): value is UploadFormDraft {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
 
-  const hasFormFields = Object.keys(EMPTY_FORM).every(
-    (key) => typeof candidate[key] === "string"
-  );
-  if (!hasFormFields) return false;
+  // Check for string fields
+  const stringFields = ["title", "mainAuthorName", "coAuthorName", "advisors", "department", "fieldOfResearch", "year", "abstract", "keywords", "researchType", "doi"];
+  const hasStringFields = stringFields.every(key => typeof candidate[key] === "string");
+  
+  // Check for email array fields
+  const emailArrays = ["mainAuthorEmails", "coAuthorEmails"];
+  const hasEmailArrays = emailArrays.every(key => {
+    const val = candidate[key];
+    return Array.isArray(val) && val.every(e => typeof e === "string");
+  });
+  
+  if (!hasStringFields || !hasEmailArrays) return false;
 
   if (candidate.pdfFileId != null && typeof candidate.pdfFileId !== "string") return false;
   if (candidate.pdfFileName != null && typeof candidate.pdfFileName !== "string") return false;
@@ -228,20 +236,37 @@ export function UploadPage() {
     if (!user) return;
 
     const nextErrors: Partial<Record<RequiredFieldKey, string>> = {};
+    
+    // Validate required fields
     REQUIRED_FORM_FIELDS.forEach(({ key }) => {
-      if (!formData[key].trim()) {
-        nextErrors[key] = "Please fill out this field.";
+      if (key === "mainAuthorEmails" || key === "coAuthorEmails") {
+        if (key === "mainAuthorEmails" && formData.mainAuthorEmails.length === 0) {
+          nextErrors[key] = "Please add at least one main author email.";
+        }
+      } else {
+        const value = formData[key as keyof typeof EMPTY_FORM];
+        if (typeof value === "string" && !value.trim()) {
+          nextErrors[key] = "Please fill out this field.";
+        }
       }
     });
+    
     if (!pdfFileId) {
       nextErrors.pdfFile = "Please select a PDF file to upload.";
     }
-    if (formData.mainAuthorEmail.trim() && !EMAIL_REGEX.test(formData.mainAuthorEmail.trim())) {
-      nextErrors.mainAuthorEmail = "Please enter a valid email address.";
-    }
-    if (formData.coAuthorEmail.trim() && !EMAIL_REGEX.test(formData.coAuthorEmail.trim())) {
-      nextErrors.coAuthorEmail = "Please enter a valid email address.";
-    }
+
+    // Validate all emails
+    formData.mainAuthorEmails.forEach((email, idx) => {
+      if (email.trim() && !EMAIL_REGEX.test(email.trim())) {
+        nextErrors.mainAuthorEmail = `Main Author Email #${idx + 1} is invalid.`;
+      }
+    });
+    
+    formData.coAuthorEmails.forEach((email, idx) => {
+      if (email.trim() && !EMAIL_REGEX.test(email.trim())) {
+        nextErrors.coAuthorEmail = `Co-Author Email #${idx + 1} is invalid.`;
+      }
+    });
 
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
@@ -262,6 +287,14 @@ export function UploadPage() {
         .map(k => k.trim())
         .filter(k => k.length > 0);
 
+      // Convert email arrays to semicolon-separated strings for backend
+      const mainAuthorEmailStr = formData.mainAuthorEmails
+        .filter(e => e.trim())
+        .join(";");
+      const coAuthorEmailStr = formData.coAuthorEmails
+        .filter(e => e.trim())
+        .join(";") || null;
+
       await createThesis({
         title:            formData.title,
         abstract:         formData.abstract,
@@ -278,8 +311,8 @@ export function UploadPage() {
         uploaded_by:      user.id,
         mainAuthorName:   formData.mainAuthorName.trim(),
         coAuthorName:     formData.coAuthorName.trim(),
-        mainAuthorEmail:  formData.mainAuthorEmail.trim(),
-        coAuthorEmail:    formData.coAuthorEmail.trim() || null,
+        mainAuthorEmail:  mainAuthorEmailStr,
+        coAuthorEmail:    coAuthorEmailStr,
         doi:              formData.doi?.trim() || null,
         research_type:    formData.researchType.trim(),
         approved_by:      null,
@@ -311,6 +344,10 @@ export function UploadPage() {
   };
 
   const set = (field: keyof typeof EMPTY_FORM, value: string) => {
+    if (field === "mainAuthorEmails" || field === "coAuthorEmails") {
+      // Skip for email arrays, they're handled directly via setFormData
+      return;
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
     setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
   };
@@ -416,43 +453,118 @@ export function UploadPage() {
                       </div>
                     )}
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="mainAuthorEmail">Main Author Email <span className="text-red-500">*</span></Label>
-                    <Input
-                      id="mainAuthorEmail"
-                      type="email"
-                      value={formData.mainAuthorEmail}
-                      onChange={e => set("mainAuthorEmail", e.target.value)}
-                      placeholder="main.author@university.edu"
-                      required
-                      className={fieldErrors.mainAuthorEmail ? "border-red-500 focus-visible:ring-red-500/40" : "border-[#2D5016]/20"}
-                    />
-                    {fieldErrors.mainAuthorEmail && (
-                      <div className="flex items-center gap-2 text-sm text-amber-600">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{fieldErrors.mainAuthorEmail}</span>
+                {/* Main Author Emails */}
+                <div className="space-y-2">
+                  <Label>Main Author Email(s) <span className="text-red-500">*</span></Label>
+                  <div className="space-y-3">
+                    {formData.mainAuthorEmails.map((email, idx) => (
+                      <div key={idx} className="flex gap-2 items-start">
+                        <div className="flex-1">
+                          <Input
+                            type="email"
+                            value={email}
+                            onChange={e => {
+                              const newEmails = [...formData.mainAuthorEmails];
+                              newEmails[idx] = e.target.value;
+                              setFormData(prev => ({ ...prev, mainAuthorEmails: newEmails }));
+                              setFieldErrors((prev) => ({ ...prev, mainAuthorEmail: undefined }));
+                            }}
+                            placeholder={`main.author${idx > 0 ? idx + 1 : ""}@university.edu`}
+                            className={fieldErrors.mainAuthorEmail ? "border-red-500 focus-visible:ring-red-500/40" : "border-[#2D5016]/20"}
+                          />
+                        </div>
+                        {formData.mainAuthorEmails.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const newEmails = formData.mainAuthorEmails.filter((_, i) => i !== idx);
+                              setFormData(prev => ({ ...prev, mainAuthorEmails: newEmails }));
+                            }}
+                            className="hover:bg-red-50 hover:text-red-600 mt-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
-                    )}
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, mainAuthorEmails: [...prev.mainAuthorEmails, ""] }));
+                      }}
+                      className="border-[#2D5016]/30 text-[#2D5016] hover:bg-[#E8F5E1] w-full"
+                    >
+                      + Add Another Email
+                    </Button>
                   </div>
+                  {fieldErrors.mainAuthorEmail && (
+                    <div className="flex items-center gap-2 text-sm text-amber-600">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{fieldErrors.mainAuthorEmail}</span>
+                    </div>
+                  )}
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="coAuthorEmail">Co-Author Email</Label>
-                    <Input
-                      id="coAuthorEmail"
-                      type="email"
-                      value={formData.coAuthorEmail}
-                      onChange={e => set("coAuthorEmail", e.target.value)}
-                      placeholder="co.author@university.edu"
-                      className={fieldErrors.coAuthorEmail ? "border-red-500 focus-visible:ring-red-500/40" : "border-[#2D5016]/20"}
-                    />
-                    {fieldErrors.coAuthorEmail && (
-                      <div className="flex items-center gap-2 text-sm text-amber-600">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{fieldErrors.coAuthorEmail}</span>
+                {/* Co-Author Emails */}
+                <div className="space-y-2">
+                  <Label>Co-Author Email(s)</Label>
+                  <div className="space-y-3">
+                    {formData.coAuthorEmails.map((email, idx) => (
+                      <div key={idx} className="flex gap-2 items-start">
+                        <div className="flex-1">
+                          <Input
+                            type="email"
+                            value={email}
+                            onChange={e => {
+                              const newEmails = [...formData.coAuthorEmails];
+                              newEmails[idx] = e.target.value;
+                              setFormData(prev => ({ ...prev, coAuthorEmails: newEmails }));
+                              setFieldErrors((prev) => ({ ...prev, coAuthorEmail: undefined }));
+                            }}
+                            placeholder={`co.author${idx > 0 ? idx + 1 : ""}@university.edu`}
+                            className={fieldErrors.coAuthorEmail ? "border-red-500 focus-visible:ring-red-500/40" : "border-[#2D5016]/20"}
+                          />
+                        </div>
+                        {formData.coAuthorEmails.length > 0 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const newEmails = formData.coAuthorEmails.filter((_, i) => i !== idx);
+                              setFormData(prev => ({ ...prev, coAuthorEmails: newEmails }));
+                            }}
+                            className="hover:bg-red-50 hover:text-red-600 mt-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
-                    )}
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, coAuthorEmails: [...prev.coAuthorEmails, ""] }));
+                      }}
+                      className="border-[#2D5016]/30 text-[#2D5016] hover:bg-[#E8F5E1] w-full"
+                    >
+                      + Add Another Email
+                    </Button>
                   </div>
+                  {fieldErrors.coAuthorEmail && (
+                    <div className="flex items-center gap-2 text-sm text-amber-600">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{fieldErrors.coAuthorEmail}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Advisors */}

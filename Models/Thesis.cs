@@ -104,13 +104,13 @@ namespace ThesisRepository.Models
         [Column("DownloadCount")]
         public int DownloadCount { get; set; } = 0;
 
-        // NVARCHAR(255) - nullable - main author email address
-        [MaxLength(255)]
+        // TEXT - nullable - main author email addresses (JSON array or semicolon-separated)
+        // Format: ["email1@example.com", "email2@example.com"] or email1@example.com;email2@example.com
         [Column("MainAuthorEmail")]
         public string? MainAuthorEmail { get; set; }
 
-        // NVARCHAR(255) - nullable - co-author email address
-        [MaxLength(255)]
+        // TEXT - nullable - co-author email addresses (JSON array or semicolon-separated)
+        // Format: ["email1@example.com", "email2@example.com"] or email1@example.com;email2@example.com
         [Column("CoAuthorEmail")]
         public string? CoAuthorEmail { get; set; }
 
@@ -122,5 +122,51 @@ namespace ThesisRepository.Models
         [MaxLength(50)]
         [Column("ResearchType")]
         public string? ResearchType { get; set; }
+
+        /// <summary>
+        /// Parse MainAuthorEmail string to array.
+        /// Supports both JSON array format and semicolon-separated format.
+        /// </summary>
+        [NotMapped]
+        public string[] MainAuthorEmailArray
+        {
+            get => ParseEmailString(MainAuthorEmail);
+            set => MainAuthorEmail = string.Join(";", value.Where(e => !string.IsNullOrWhiteSpace(e)));
+        }
+
+        /// <summary>
+        /// Parse CoAuthorEmail string to array.
+        /// Supports both JSON array format and semicolon-separated format.
+        /// </summary>
+        [NotMapped]
+        public string[] CoAuthorEmailArray
+        {
+            get => ParseEmailString(CoAuthorEmail);
+            set => CoAuthorEmail = string.Join(";", value.Where(e => !string.IsNullOrWhiteSpace(e)));
+        }
+
+        private static string[] ParseEmailString(string? emailString)
+        {
+            if (string.IsNullOrWhiteSpace(emailString))
+                return Array.Empty<string>();
+
+            // Try to parse as JSON array first
+            try
+            {
+                if (emailString.TrimStart().StartsWith("["))
+                {
+                    var parsed = System.Text.Json.JsonSerializer.Deserialize<string[]>(emailString);
+                    return parsed?.Where(e => !string.IsNullOrWhiteSpace(e)).ToArray() ?? Array.Empty<string>();
+                }
+            }
+            catch { }
+
+            // Fall back to semicolon-separated format
+            return emailString
+                .Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(e => e.Trim())
+                .Where(e => !string.IsNullOrWhiteSpace(e))
+                .ToArray();
+        }
     }
 }
