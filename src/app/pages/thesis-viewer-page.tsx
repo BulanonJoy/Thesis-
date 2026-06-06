@@ -307,7 +307,7 @@ export function ThesisViewerPage() {
         </div>
       )}
 
-      <div className={expanded ? "relative flex h-screen min-w-0 bg-gray-100" : "flex min-w-0 min-h-0 flex-col lg:flex-row"}>
+      <div className={expanded ? "relative flex h-screen min-w-0 bg-gray-100" : "flex min-w-0 min-h-0 flex-col lg:flex-row lg:h-[calc(100vh-65px)]"}>
         {expanded && (
           <div className="absolute right-4 top-4 z-10">
             <Button
@@ -322,7 +322,7 @@ export function ThesisViewerPage() {
           </div>
         )}
         {/* Left: Details */}
-        <div className={expanded ? "hidden" : "lg:w-1/3 min-w-0"}>
+        <div className={expanded ? "hidden" : "lg:w-1/3 min-w-0 lg:h-full lg:overflow-auto"}>
           <div className="p-6 space-y-6">
             {/* Title */}
             <div>
@@ -491,7 +491,7 @@ export function ThesisViewerPage() {
           onKeyDown={handleViewerKeyDown}
           tabIndex={0}
         >
-          <div className={expanded ? "flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-sm" : "flex min-h-0 flex-col overflow-hidden lg:h-[calc(100vh-65px)]"}>
+          <div className={expanded ? "flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-sm" : "flex flex-1 min-h-0 flex-col overflow-hidden lg:h-full"}>
             {pdfLoading && (
               <div className="flex-1 flex items-center justify-center">
                 <div className="flex items-center gap-3 text-[#2D5016]">
@@ -516,7 +516,7 @@ export function ThesisViewerPage() {
             {!pdfLoading && !pdfError && pdfSource && (
               <div
                 ref={setPdfContainer}
-                className="min-h-0 h-full overflow-auto bg-gray-200 p-4 select-none"
+                className="min-h-0 flex-1 overflow-auto bg-gray-200 p-4 select-none"
                 onContextMenu={(e) => e.preventDefault()}
               >
                 <div className="mx-auto flex w-fit flex-col gap-4">
