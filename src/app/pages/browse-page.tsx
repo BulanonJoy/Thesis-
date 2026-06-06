@@ -31,6 +31,7 @@ const DEPARTMENTS = [
 const RESEARCH_TYPES = [
   "White Paper",
   "Published Research",
+  "Unpublished Paper",
 ];
 
 export function BrowsePage() {
