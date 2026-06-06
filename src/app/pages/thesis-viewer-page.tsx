@@ -322,7 +322,7 @@ export function ThesisViewerPage() {
           </div>
         )}
         {/* Left: Details */}
-        <div className={expanded ? "hidden" : "lg:w-1/3"}>
+        <div className={expanded ? "hidden" : "lg:w-1/3 min-w-0"}>
           <div className="p-6 space-y-6">
             {/* Title */}
             <div>
@@ -345,14 +345,14 @@ export function ThesisViewerPage() {
               {shouldShowAuthorInfo && (
                 <div className="flex items-start gap-2">
                   <User className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">Authors</p>
-                    <p className="text-gray-900">{authorList || "—"}</p>
+                    <p className="text-gray-900 break-words whitespace-normal">{authorList || "—"}</p>
                     {thesis.mainAuthorEmail && (
-                      <p className="text-gray-700 text-xs mt-1">Main: {thesis.mainAuthorEmail}</p>
+                      <p className="text-gray-700 text-xs mt-1 break-words whitespace-normal">Main: {thesis.mainAuthorEmail}</p>
                     )}
                     {thesis.coAuthorEmail && (
-                      <p className="text-gray-700 text-xs">Co-Author: {thesis.coAuthorEmail}</p>
+                      <p className="text-gray-700 text-xs break-words whitespace-normal">Co-Author: {thesis.coAuthorEmail}</p>
                     )}
                   </div>
                 </div>
@@ -360,9 +360,9 @@ export function ThesisViewerPage() {
 
               <div className="flex items-start gap-2">
                 <Building className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">Department</p>
-                  <p className="text-gray-900">{thesis.department}</p>
+                  <p className="text-gray-900 break-words whitespace-normal">{thesis.department}</p>
                 </div>
               </div>
 
@@ -377,9 +377,9 @@ export function ThesisViewerPage() {
               {thesis.research_type && (
                 <div className="flex items-start gap-2">
                   <Tag className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">Research Type</p>
-                    <p className="text-gray-900">{thesis.research_type}</p>
+                    <p className="text-gray-900 break-words whitespace-normal">{thesis.research_type}</p>
                   </div>
                 </div>
               )}
@@ -387,10 +387,10 @@ export function ThesisViewerPage() {
               {thesis.doi && (
                 <div className="flex items-start gap-2">
                   <Tag className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">DOI</p>
-                    <div className="flex items-center gap-2">
-                      <a href={`https://doi.org/${thesis.doi}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <a href={`https://doi.org/${thesis.doi}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline break-all whitespace-normal">
                         {thesis.doi}
                       </a>
                       <Button type="button" size="icon" variant="outline" onClick={handleCopyDoi} className="h-6 w-6">
